@@ -1,0 +1,68 @@
+package io.lumine.mythic.lib.manager;
+
+import io.lumine.mythic.lib.MythicLib;
+import io.lumine.mythic.lib.element.Element;
+import io.lumine.mythic.lib.module.MMOPlugin;
+import io.lumine.mythic.lib.module.Module;
+import io.lumine.mythic.lib.module.ModuleInfo;
+import io.lumine.mythic.lib.util.FileUtils;
+import io.lumine.mythic.lib.util.config.YamlFile;
+import io.lumine.mythic.lib.util.lang3.Validate;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.logging.Level;
+
+@ModuleInfo(key = "elements")
+public class ElementManager extends Module {
+    private final Map<String, Element> mapped = new HashMap<>();
+
+    public ElementManager(MMOPlugin plugin) {
+        super(plugin);
+    }
+
+    public void register(Element element) {
+        Validate.isTrue(!mapped.containsKey(element.getId()), "An element already exists with the ID '" + element.getId() + "'");
+
+        mapped.put(element.getId(), element);
+    }
+
+    @Override
+    protected void onReset() {
+        mapped.clear();
+    }
+
+    @Override
+    protected void onReload() {
+
+        // Load default file
+        FileUtils.copyDefaultFile(MythicLib.plugin, "elements.yml");
+
+        // Load elements
+        var config = new YamlFile("elements").getContent();
+        for (String key : config.getKeys(false))
+            try {
+                register(new Element(config.getConfigurationSection(key)));
+            } catch (RuntimeException exception) {
+                MythicLib.plugin.getLogger().log(Level.WARNING, "Could not load element '" + key + "': " + exception.getMessage());
+            }
+    }
+
+    @NotNull
+    public Element get(String id) {
+        return Objects.requireNonNull(mapped.get(id), "No element found with ID '" + id + "'");
+    }
+
+    @Nullable
+    public Element getOrNull(String id) {
+        return mapped.get(id);
+    }
+
+    public Collection<Element> getAll() {
+        return mapped.values();
+    }
+}

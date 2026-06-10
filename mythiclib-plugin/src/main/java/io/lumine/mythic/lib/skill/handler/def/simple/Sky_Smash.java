@@ -1,0 +1,58 @@
+package io.lumine.mythic.lib.skill.handler.def.simple;
+
+import io.lumine.mythic.lib.UtilityMethods;
+import io.lumine.mythic.lib.damage.DamageType;
+import io.lumine.mythic.lib.skill.SkillMetadata;
+import io.lumine.mythic.lib.skill.handler.BuiltinSkillHandler;
+import io.lumine.mythic.lib.skill.handler.SkillHandler;
+import io.lumine.mythic.lib.skill.result.def.SimpleSkillResult;
+import io.lumine.mythic.lib.version.Sounds;
+import io.lumine.mythic.lib.version.VParticle;
+import io.lumine.mythic.lib.version.VPotionEffectType;
+import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
+@BuiltinSkillHandler(mods = {"damage", "knock-up"})
+public class Sky_Smash extends SkillHandler<SimpleSkillResult> {
+    private final List<DamageType> damageTypes;
+
+    public Sky_Smash(ConfigurationSection config) {
+        super(config);
+
+        damageTypes = DamageType.listFromConfig(List.of(DamageType.SKILL, DamageType.PHYSICAL), config.get("damage_types"));
+    }
+
+    @Override
+    public @NotNull SimpleSkillResult getResult(SkillMetadata meta) {
+        return new SimpleSkillResult();
+    }
+
+    @Override
+    public void whenCast(SimpleSkillResult result, SkillMetadata skillMeta) {
+        double damage = skillMeta.getParameter("damage");
+        double knockUp = skillMeta.getParameter("knock-up");
+
+        Player caster = skillMeta.getCaster().getPlayer();
+
+        caster.getWorld().playSound(caster.getLocation(), Sounds.ENTITY_ZOMBIE_ATTACK_IRON_DOOR, 2, .5f);
+        caster.addPotionEffect(new PotionEffect(VPotionEffectType.SLOWNESS.get(), 2, 254));
+        Location loc = caster.getEyeLocation().add(caster.getEyeLocation().getDirection().multiply(3));
+        loc.getWorld().spawnParticle(VParticle.LARGE_EXPLOSION.get(), loc, 0);
+        loc.getWorld().spawnParticle(VParticle.LARGE_SMOKE.get(), loc, 16, 0, 0, 0, .1);
+
+        for (Entity entity : UtilityMethods.getNearbyChunkEntities(loc))
+            if (UtilityMethods.canTarget(caster, entity) && entity.getLocation().distanceSquared(loc) < 10) {
+                skillMeta.getCaster().attack((LivingEntity) entity, damage, damageTypes);
+                Location loc1 = caster.getEyeLocation().clone();
+                loc1.setPitch(-70);
+                entity.setVelocity(loc1.getDirection().multiply(1.2 * knockUp));
+            }
+    }
+}

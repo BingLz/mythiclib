@@ -1,0 +1,57 @@
+name: Build MythicLib
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build plugin jar
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Show build environment
+        run: |
+          java -version
+          mvn -version
+
+      - name: Run tests
+        run: mvn -B -ntp -pl mythiclib-plugin test
+
+      # This mirrors server_install.bat. A full `mvn clean package` attempts to
+      # build every NMS wrapper module and may require locally generated Spigot
+      # BuildTools artifacts for older Minecraft versions.
+      - name: Build deployable MythicLib jar
+        run: |
+          mvn -B -ntp clean install \
+            -DskipTests \
+            -pl mythiclib-plugin,mythiclib-rpg,mythiclib-v26_1_r0,mythiclib-dist
+
+      - name: List built jars
+        run: |
+          find target mythiclib-*/target -type f -name "*.jar" -print
+
+      - name: Upload MythicLib jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: MythicLib-jar
+          path: target/MythicLib-*.jar
+          if-no-files-found: error
+          retention-days: 14
