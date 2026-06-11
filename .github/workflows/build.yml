@@ -44,14 +44,33 @@ jobs:
             -DskipTests \
             -pl mythiclib-plugin,mythiclib-rpg,mythiclib-v26_1_r0,mythiclib-dist
 
-      - name: List built jars
+      - name: Collect MythicLib jar
         run: |
-          find target mythiclib-*/target -type f -name "*.jar" -print
+          mkdir -p artifacts
+
+          jar_path=""
+          if [ -d target ]; then
+            jar_path="$(find target -maxdepth 1 -type f -name 'MythicLib-*.jar' | sort | head -n 1)"
+          fi
+
+          if [ -z "$jar_path" ] && [ -d mythiclib-dist/target ]; then
+            jar_path="$(find mythiclib-dist/target -maxdepth 1 -type f -name '*.jar' ! -name 'original-*' ! -name '*-sources.jar' ! -name '*-javadoc.jar' | sort | head -n 1)"
+          fi
+
+          if [ -z "$jar_path" ]; then
+            echo "No MythicLib jar was found. Built jars:"
+            find . -path '*/target/*.jar' -type f -print || true
+            exit 1
+          fi
+
+          echo "Found jar: $jar_path"
+          cp "$jar_path" artifacts/
+          ls -lh artifacts/
 
       - name: Upload MythicLib jar
         uses: actions/upload-artifact@v4
         with:
           name: MythicLib-jar
-          path: target/MythicLib-*.jar
+          path: artifacts/*.jar
           if-no-files-found: error
           retention-days: 14
