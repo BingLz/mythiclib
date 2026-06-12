@@ -19,7 +19,7 @@ public class ServerVersion {
     private final boolean paper;
 
     private static final int MAXIMUM_INDEX = 3;
-    private static final String MOST_RECENT_WRAPPER = "VersionWrapper_26_1_R1";
+    private static final String MOST_RECENT_WRAPPER = "VersionWrapper_1_21_R7";
 
     @Deprecated
     public ServerVersion(Class<?> ignored) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
