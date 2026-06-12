@@ -42,7 +42,7 @@ jobs:
         run: |
           mvn -B -ntp clean install \
             -DskipTests \
-            -pl mythiclib-plugin,mythiclib-rpg,mythiclib-v26_1_r0,mythiclib-dist
+            -pl mythiclib-plugin,mythiclib-rpg,mythiclib-v1_21_r7,mythiclib-dist
 
       - name: Collect MythicLib jar
         run: |
